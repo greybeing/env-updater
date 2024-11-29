@@ -3,7 +3,7 @@ package core
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
@@ -32,7 +32,7 @@ func DeleteSecureFile(organization, project, fileName string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete file, status: %d, response: %s", resp.StatusCode, string(body))
 	}
 
@@ -49,7 +49,7 @@ func UploadSecureFile(organization, project, filePath, fileName string) error {
 
 	url := fmt.Sprintf("%s/%s/%s/_apis/distributedtask/securefiles?api-version=7.1-preview.1", azureDevOpsBaseURL, organization, project)
 
-	fileContent, err := ioutil.ReadFile(filePath)
+	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
@@ -68,7 +68,7 @@ func UploadSecureFile(organization, project, filePath, fileName string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to upload file, status: %d, response: %s", resp.StatusCode, string(body))
 	}
 
