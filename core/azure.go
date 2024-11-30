@@ -10,7 +10,7 @@ import (
 
 const azureDevOpsBaseURL = "https://dev.azure.com"
 
-// DeleteSecureFile deletes a file from Azure DevOps secure files
+// DeleteSecureFile deletes a file from Azure DevOps secure files.
 func DeleteSecureFile(organization, project, fileName string) error {
 	pat := os.Getenv("AZURE_DEVOPS_PAT")
 	if pat == "" {
