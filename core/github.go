@@ -7,44 +7,31 @@ import (
 	"os"
 )
 
-// FetchUpdatedFile fetches the specified file from GitHub
-func FetchUpdatedFile(filePath, owner, repo, branch string) string {
-	githubToken := os.Getenv("GITHUB_TOKEN")
-	if githubToken == "" {
-		fmt.Println("GITHUB_TOKEN is not set")
-		return ""
+func FetchUpdatedFile(repo, path, branch string) ([]byte, error) {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return nil, fmt.Errorf("GITHUB_TOKEN is not set")
 	}
 
-	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo, branch, filePath)
-
+	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/%s?ref=%s", repo, path, branch)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Printf("Error creating request: %v\n", err)
-		return ""
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+githubToken)
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		fmt.Printf("Error fetching file: %v, Status: %d\n", err, resp.StatusCode)
-		return ""
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch file: %w", err)
 	}
 	defer resp.Body.Close()
 
-	outputPath := "/tmp/" + filePath
-	os.MkdirAll("/tmp/env", os.ModePerm) // Create parent directory if needed
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		fmt.Printf("Error creating output file: %v\n", err)
-		return ""
-	}
-	defer outFile.Close()
-
-	_, err = io.Copy(outFile, resp.Body)
-	if err != nil {
-		fmt.Printf("Error writing to file: %v\n", err)
-		return ""
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to fetch file, status: %d, response: %s", resp.StatusCode, string(body))
 	}
 
-	return outputPath
+	return io.ReadAll(resp.Body)
 }

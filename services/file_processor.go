@@ -2,32 +2,42 @@ package services
 
 import (
 	"fmt"
+	"os"
+
 	"env-updater/core"
 )
 
-func ProcessUpdatedFiles(files []string) {
-	repoOwner := "your-github-username"
-	repoName := "your-repo-name"
-	branch := "main"
-	organization := "your-azure-org"
-	project := "your-azure-project"
+func ProcessUpdatedFile(filePath string) error {
+	repo := os.Getenv("GITHUB_REPO")
+	branch := "main" // You can make this dynamic if needed
 
-	for _, file := range files {
-		fmt.Printf("Processing file: %s\n", file)
-
-		// Step 1: Fetch the file
-		filePath := core.FetchUpdatedFile(file, repoOwner, repoName, branch)
-
-		// Step 2: Replace the file in Azure DevOps
-		fileName := file // Use file name as it appears in the secure file library
-		err := core.DeleteSecureFile(organization, project, fileName)
-		if err != nil {
-			fmt.Printf("Error deleting file: %v\n", err)
-		}
-
-		err = core.UploadSecureFile(organization, project, filePath, fileName)
-		if err != nil {
-			fmt.Printf("Error uploading file: %v\n", err)
-		}
+	// Fetch the updated file from GitHub
+	fileContent, err := core.FetchUpdatedFile(repo, filePath, branch)
+	if err != nil {
+		return fmt.Errorf("failed to fetch updated file: %w", err)
 	}
+
+	// Write the file content to a temporary local file
+	tempFilePath := "/tmp/" + filePath
+	err = os.WriteFile(tempFilePath, fileContent, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write file to temp path: %w", err)
+	}
+
+	// Upload the file to Azure DevOps
+	organization := os.Getenv("AZURE_ORGANIZATION")
+	project := os.Getenv("AZURE_PROJECT")
+
+	err = core.DeleteSecureFile(organization, project, filePath)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing secure file: %w", err)
+	}
+
+	err = core.UploadSecureFile(organization, project, tempFilePath, filePath)
+	if err != nil {
+		return fmt.Errorf("failed to upload secure file: %w", err)
+	}
+
+	fmt.Println("File processed and updated in Azure DevOps successfully.")
+	return nil
 }

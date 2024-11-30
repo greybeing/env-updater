@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+
 	"env-updater/services"
 )
 
 type WebhookPayload struct {
-	Repository struct {
-		FullName string `json:"full_name"`
-	} `json:"repository"`
-	Ref  string `json:"ref"`
 	Commits []struct {
 		Modified []string `json:"modified"`
 	} `json:"commits"`
@@ -20,11 +18,10 @@ type WebhookPayload struct {
 
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var payload WebhookPayload
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
@@ -32,23 +29,24 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := json.Unmarshal(body, &payload); err != nil {
-		http.Error(w, "Failed to parse webhook payload", http.StatusBadRequest)
+	var payload WebhookPayload
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	var updatedFiles []string
 	for _, commit := range payload.Commits {
 		for _, file := range commit.Modified {
-			if len(file) > 4 && file[:4] == "/" {
-				updatedFiles = append(updatedFiles, file)
+			if len(file) >= 4 && file[:4] == "/" { // Only process files in the "env/" folder
+				log.Printf("Processing updated file: %s", file)
+				err := services.ProcessUpdatedFile(file)
+				if err != nil {
+					log.Printf("Error processing file %s: %v", file, err)
+				}
 			}
 		}
 	}
 
-	if len(updatedFiles) > 0 {
-		go services.ProcessUpdatedFiles(updatedFiles)
-	}
-
-	fmt.Fprintln(w, "Webhook processed successfully.")
+	fmt.Fprintln(w, "Webhook processed successfully")
 }
