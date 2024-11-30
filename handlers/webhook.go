@@ -6,8 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-
-	"env-updater/services"
+    "env-updater/services"
 )
 
 type WebhookPayload struct {
@@ -38,7 +37,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, commit := range payload.Commits {
 		for _, file := range commit.Modified {
-			if len(file) >= 4 && file[:4] == "/" { // Only process files in the "env/" folder
+			if len(file) > 0 { // Process all files (in the root folder or elsewhere)
 				log.Printf("Processing updated file: %s", file)
 				err := services.ProcessUpdatedFile(file)
 				if err != nil {
@@ -47,6 +46,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+    w.WriteHeader(http.StatusOK)
 
 	fmt.Fprintln(w, "Webhook processed successfully")
 }
