@@ -40,7 +40,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	var updatedFiles []string
 	for _, commit := range payload.Commits {
 		for _, file := range commit.Modified {
-			if len(file) > 4 && file[:4] == "env/" {
+			if len(file) > 4 && file[:4] == "/" {
 				updatedFiles = append(updatedFiles, file)
 			}
 		}
