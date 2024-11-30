@@ -49,4 +49,5 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
 
 	fmt.Fprintln(w, "Webhook processed successfully")
+	log.Printf("Webhook processed successfully")
 }
