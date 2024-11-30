@@ -16,9 +16,9 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Default port
-	}
+	// if port == "" {
+	// 	port = "8080" // Default port.
+	// }
 
 	http.HandleFunc("/webhook", handlers.WebhookHandler)
 
