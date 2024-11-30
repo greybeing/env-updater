@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"log"
 )
 
 func FetchUpdatedFile(repo, path, branch string) ([]byte, error) {
@@ -32,6 +33,7 @@ func FetchUpdatedFile(repo, path, branch string) ([]byte, error) {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to fetch file, status: %d, response: %s", resp.StatusCode, string(body))
 	}
-
+    log.Printf("File fetched successfully.")
 	return io.ReadAll(resp.Body)
+	
 }

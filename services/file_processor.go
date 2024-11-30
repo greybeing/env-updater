@@ -3,8 +3,8 @@ package services
 import (
 	"fmt"
 	"os"
-
-	"env-updater/core"
+    "env-updater/core"
+	"log"
 )
 
 func ProcessUpdatedFile(filePath string) error {
@@ -39,5 +39,6 @@ func ProcessUpdatedFile(filePath string) error {
 	}
 
 	fmt.Println("File processed and updated in Azure DevOps successfully.")
+	log.Printf("File uploaded successfully.")
 	return nil
 }
