@@ -3,81 +3,72 @@ package services
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
-
-	"env-updater/core"
+    "env-updater/core"
+	"github.com/joho/godotenv"
 )
 
-// ProcessUpdatedFile processes and updates the secure file in Azure DevOps.
-func ProcessUpdatedFile(filePath string) error {
-	// Log the start of the process
-	log.Printf("Starting processing for file: %s", filePath)
-
-	// Load environment variables
-	if err := core.LoadEnv(); err != nil {
-		log.Printf("Error loading environment variables: %v", err)
-		return fmt.Errorf("failed to load environment variables: %w", err)
-	}
-
-	// Fetch required environment variables
-	repo := os.Getenv("GITHUB_REPO")
-	branch := "main" // This can be made dynamic if needed
-
-	// Validate required environment variables
-	if repo == "" {
-		log.Fatal("GITHUB_REPO environment variable must be set")
-	}
-
-	// Fetch the updated file from GitHub
-	log.Printf("Fetching updated file from GitHub repository: %s, branch: %s", repo, branch)
-	fileContent, err := core.FetchUpdatedFile(repo, filePath, branch)
+// LoadEnv loads environment variables from a .env file
+func init() {
+	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Error fetching updated file: %v", err)
-		return fmt.Errorf("failed to fetch updated file: %w", err)
+		log.Println("No .env file found. Proceeding with system environment variables...")
+	}
+}
+
+
+func ProcessWebhookEvent(webhookData map[string]interface{}) error {
+	// Extract repository details
+	repo, ok := webhookData["repository"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("no repository data found")
 	}
 
-	// Write the file content to a temporary local file
-	tempFilePath := filepath.Join(os.TempDir(), filepath.Base(filePath))
-	log.Printf("Writing file to temporary path: %s", tempFilePath)
-	err = os.WriteFile(tempFilePath, fileContent, 0644)
-	if err != nil {
-		log.Printf("Error writing file to temporary path: %v", err)
-		return fmt.Errorf("failed to write file to temp path: %w", err)
+	fullName, ok := repo["full_name"].(string)
+	if !ok {
+		return fmt.Errorf("could not extract repository full name")
 	}
 
-	// Get the list of secure files in Azure DevOps
-	log.Println("Fetching secure files from Azure DevOps")
-	secureFiles, err := core.GetSecureFiles()
-	if err != nil {
-		log.Printf("Error fetching secure files: %v", err)
-		return fmt.Errorf("failed to fetch secure files: %w", err)
+	// Extract file details from push event
+	files, ok := webhookData["commits"].([]interface{})
+	if !ok || len(files) == 0 {
+		return fmt.Errorf("no files found in webhook")
 	}
 
-	// Find the secure file by its name
-	log.Printf("Looking for secure file with name: %s", filePath)
-	file, err := core.FindSecureFileByName(secureFiles, filepath.Base(filePath))
-	if err != nil {
-		log.Printf("Error finding secure file: %v", err)
-		return fmt.Errorf("failed to find secure file: %w", err)
+	// Process each modified file
+	for _, commitInterface := range files {
+		commit, ok := commitInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		modifiedFiles, ok := commit["modified"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, fileInterface := range modifiedFiles {
+			filename, ok := fileInterface.(string)
+			if !ok {
+				continue
+			}
+
+			// Fetch file content from GitHub
+			fileContent, err := core.FetchFileFromGitHub(fullName, filename)
+			if err != nil {
+				log.Printf("GitHub file fetch error for %s: %v", filename, err)
+				continue
+			}
+
+			// Update file in Azure DevOps
+			if err := core.UpdateAzureDevOpsFile(filepath.Base(filename), fileContent); err != nil {
+				log.Printf("Azure DevOps update error for %s: %v", filename, err)
+				continue
+			}
+
+			log.Printf("Successfully processed file: %s", filename)
+		}
 	}
 
-	// Delete the secure file
-	log.Printf("Deleting secure file with ID: %s", file.ID)
-	err = core.DeleteSecureFile(file.ID)
-	if err != nil {
-		log.Printf("Error deleting secure file: %v", err)
-		return fmt.Errorf("failed to delete existing secure file: %w", err)
-	}
-
-	// Upload the updated file
-	log.Printf("Uploading updated file to Azure DevOps: %s", filePath)
-	err = core.UploadSecureFile(tempFilePath, filepath.Base(filePath))
-	if err != nil {
-		log.Printf("Error uploading secure file: %v", err)
-		return fmt.Errorf("failed to upload secure file: %w", err)
-	}
-
-	log.Printf("File processed and updated in Azure DevOps successfully: %s", filePath)
 	return nil
 }
