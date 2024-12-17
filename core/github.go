@@ -90,6 +90,18 @@ func FetchFileFromGitHub(repoFullName, filePath string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decode file content: %v", err)
 	}
 
+	// Log the file content
+	log.Println("Fetched File Content:")
+	log.Println(content)
+
+	// Save the file content to security.txt
+	filePathToSave := "security.txt"
+	err = os.WriteFile(filePathToSave, []byte(content), 0644)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write file to %s: %v", filePathToSave, err)
+	}
+	log.Printf("File content saved to %s\n", filePathToSave)
+
 	return []byte(content), nil
 }
 
