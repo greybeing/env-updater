@@ -5,8 +5,8 @@ import (
     "fmt"
     "log"
     "os"
-    "strings"
     "path/filepath"
+    "strings"
     "env-updater/core"
     "github.com/joho/godotenv"
 )
@@ -17,6 +17,24 @@ func init() {
     if err != nil {
         log.Println("No .env file found. Proceeding with system environment variables...")
     }
+}
+
+// This function should map filenames or parts of filenames to Azure DevOps projects
+func getProjectForFile(filename string) string {
+    // Example mapping:
+    projectMap := map[string]string{
+        "frontend_": "gamepride-frontend",
+        "api_":  "gamepride-api",
+        "admin_":   "gamepride-admin",
+    }
+
+    for prefix, project := range projectMap {
+        if strings.HasPrefix(filename, prefix) {
+            return project
+        }
+    }
+    // Default project if no match is found
+    return "DefaultProject"
 }
 
 func ProcessWebhookEvent(webhookData map[string]interface{}) error {
@@ -72,17 +90,23 @@ func ProcessWebhookEvent(webhookData map[string]interface{}) error {
                 continue
             }
 
+            // Dynamically set the project based on the filename
+            project := getProjectForFile(filepath.Base(filename))
+            if err := os.Setenv("AZURE_DEVOPS_PROJECT", project); err != nil {
+                log.Printf("Failed to set environment variable for project: %v", err)
+                continue
+            }
+
             // Update file in Azure DevOps (includes delete and upload)
             err = core.UpdateAzureDevOpsFile(ctx, filepath.Base(filename))
             if err != nil {
-                // Check if this is a success with status code 200
                 if !isSuccessError(err) {
                     log.Printf("Azure DevOps update error for %s: %v", filename, err)
                     continue
                 }
                 log.Printf("File %s successfully updated in Azure DevOps", filename)
             } else {
-                log.Printf("Successfully processed file: %s", filename)
+                log.Printf("Successfully processed file: %s in project %s", filename, project)
             }
         }
     }
