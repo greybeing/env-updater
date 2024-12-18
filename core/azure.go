@@ -10,7 +10,6 @@ import (
     "log"
     "net/http"
     "os"
-    
     "time"
 
     "github.com/joho/godotenv"
@@ -24,7 +23,7 @@ func init() {
     }
 }
 
-// UpdateAzureDevOpsFile deletes the existing file and uploads a new version
+// UpdateAzureDevOpsFile deletes the existing file and uploads a new version, using dynamically selected project
 func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
     // Retrieve Azure DevOps configuration 
     pat := os.Getenv("AZURE_DEVOPS_PAT")
@@ -87,7 +86,7 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
         filename,
     )
 
-    log.Printf("Preparing to upload file %s to Azure DevOps", filename)
+    log.Printf("Preparing to upload file %s to Azure DevOps in project %s", filename, project)
     log.Printf("Request URL: %s", apiURL)
 
     // Create HTTP request for file upload with context
