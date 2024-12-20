@@ -21,7 +21,7 @@ func init() {
 
 // This function should map filenames or parts of filenames to Azure DevOps projects
 func getProjectForFile(filename string) string {
-    // Example mapping:
+    // projectfile mapping:
     projectMap := map[string]string{
         "frontend_": "gamepride-frontend",
         "api_":  "gamepride-api",
@@ -108,7 +108,14 @@ func ProcessWebhookEvent(webhookData map[string]interface{}) error {
             } else {
                 log.Printf("Successfully processed file: %s in project %s", filename, project)
             }
-        }
+        }   
+            // Delete the temporary security.txt file after successful use
+            if err := os.Remove("security.txt"); err != nil {
+                log.Printf("Failed to delete security.txt: %v", err)
+            } else {
+                log.Println("Successfully deleted security.txt")
+            }
+        
     }
 
     return nil
