@@ -364,7 +364,7 @@ func triggerCIByMatchablePart(ctx context.Context, matchPart, project, filename 
             }
         }
 
-        log.Printf("Successfully triggered pipeline %s with score %d for matchable part %s", bestMatch.Pipeline.Name, bestMatch.Score, matchPart)
+        log.Printf("Successfully triggered pipeline %s", bestMatch.Pipeline.Name)
         return nil
     } else {
         log.Printf("No matching pipeline found for matchable part %s", matchPart)
