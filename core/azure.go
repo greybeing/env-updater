@@ -30,9 +30,9 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
     org := os.Getenv("AZURE_DEVOPS_ORG")
     project := os.Getenv("AZURE_DEVOPS_PROJECT")
 
-    log.Printf("AZURE_DEVOPS_PAT: [REDACTED]")
-    log.Printf("AZURE_DEVOPS_ORG: %s", org)
-    log.Printf("AZURE_DEVOPS_PROJECT: %s", project)
+    // log.Printf("AZURE_DEVOPS_PAT: [REDACTED]")
+    // log.Printf("AZURE_DEVOPS_ORG: %s", org)
+    // log.Printf("AZURE_DEVOPS_PROJECT: %s", project)
 
     // Validate environment variables 
     if pat == "" {
@@ -52,14 +52,14 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
     if _, err := os.Stat(securityFilePath); os.IsNotExist(err) {
         return fmt.Errorf("security.txt file does not exist in the root directory")
     }
-    log.Println("Confirmed security.txt exists")
+    // log.Println("Confirmed security.txt exists")
 
     // Read the content of "security.txt"
     content, err := os.ReadFile(securityFilePath)
     if err != nil {
         return fmt.Errorf("failed to read security.txt: %v", err)
     }
-    log.Printf("Successfully read security.txt with %d bytes", len(content))
+    // log.Printf("Successfully read security.txt with %d bytes", len(content))
 
     // Check if the file exists before attempting to delete
     fileExists, secureFileId, err := checkFileExists(ctx, filename, pat, org, project)
@@ -73,7 +73,7 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
         if deleteErr != nil {
             return fmt.Errorf("error deleting file: %v", deleteErr)
         }
-        log.Printf("File %s was successfully deleted", filename)
+        // log.Printf("File %s was successfully deleted", filename)
     } else {
         log.Printf("File %s not found, proceeding to upload", filename)
     }
@@ -86,8 +86,8 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
         filename,
     )
 
-    log.Printf("Preparing to upload file %s to Azure DevOps in project %s", filename, project)
-    log.Printf("Request URL: %s", apiURL)
+    // log.Printf("Preparing to upload file %s to Azure DevOps in project %s", filename, project)
+    // log.Printf("Request URL: %s", apiURL)
 
     // Create HTTP request for file upload with context
     req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(content))
@@ -98,7 +98,7 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
     // Set headers
     req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(":"+pat)))
     req.Header.Set("Content-Type", "application/octet-stream")
-    log.Printf("Request Headers: %+v", req.Header)
+    // log.Printf("Request Headers: %+v", req.Header)
 
     // Execute request
     client := &http.Client{
@@ -115,7 +115,7 @@ func UpdateAzureDevOpsFile(ctx context.Context, filename string) error {
 
     // Check response status
     if resp.StatusCode != http.StatusCreated {
-        log.Printf("Azure DevOps API Response - Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
+        // log.Printf("Azure DevOps API Response - Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
         return fmt.Errorf("file upload failed with status code %d: %s", resp.StatusCode, string(bodyBytes))
     }
 

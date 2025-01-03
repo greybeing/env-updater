@@ -100,7 +100,7 @@ func FetchFileFromGitHub(repoFullName, filePath string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to write file to %s: %v", filePathToSave, err)
 	}
-	log.Printf("File content saved to %s\n", filePathToSave)
+	// log.Printf("File content saved to %s\n", filePathToSave)
 
 	return []byte(content), nil
 }

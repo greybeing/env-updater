@@ -235,7 +235,7 @@ func ProcessWebhookEvent(webhookData map[string]interface{}) error {
         if err := os.Remove("security.txt"); err != nil {
             log.Printf("Failed to delete security.txt: %v", err)
         } else {
-            log.Println("Successfully deleted security.txt")
+            // log.Println("Successfully deleted security.txt")
         }
     }
 
@@ -295,10 +295,10 @@ func triggerCIByMatchablePart(ctx context.Context, matchPart, project, filename 
     }
 
     // Log the list of pipelines fetched
-    log.Printf("Fetched pipelines:")
-    for _, pipeline := range pipelineList.Value {
-        log.Printf(" - %s (ID: %d)", pipeline.Name, pipeline.Id)
-    }
+    // log.Printf("Fetched pipelines:")
+    // for _, pipeline := range pipelineList.Value {
+    //     log.Printf(" - %s (ID: %d)", pipeline.Name, pipeline.Id)
+    // }
 
     // Find the pipeline with the most matching letters for the part after the last dot
     var bestMatch struct {
@@ -312,7 +312,7 @@ func triggerCIByMatchablePart(ctx context.Context, matchPart, project, filename 
 
     for _, pipeline := range pipelineList.Value {
         score := calculateMatchScore(strings.ToLower(matchPart), strings.ToLower(pipeline.Name))
-        log.Printf("Pipeline %s score: %d", pipeline.Name, score)
+        // log.Printf("Pipeline %s score: %d", pipeline.Name, score)
         if score > bestMatch.Score {
             bestMatch.Score = score
             bestMatch.Pipeline.Id = pipeline.Id
@@ -358,7 +358,7 @@ func triggerCIByMatchablePart(ctx context.Context, matchPart, project, filename 
         bodyBytes, _ := io.ReadAll(resp.Body)
         if resp.StatusCode != http.StatusCreated {
             if resp.StatusCode == http.StatusOK {
-                log.Printf("CI/CD trigger responded with status code 200, considering this a success")
+                // log.Printf("CI/CD trigger responded with status code 200")
             } else {
                 return fmt.Errorf("CI/CD trigger failed with status code %d: %s", resp.StatusCode, string(bodyBytes))
             }
